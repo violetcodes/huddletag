@@ -21,3 +21,9 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime data directory — not committed; mount via Docker volume
+data/
+
+# To exclude a specific private job from git, add a line like:
+#   jobs/my-private-job/
