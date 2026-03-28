@@ -6,7 +6,7 @@ services:
       DB_PATH: /data/db/huddletag.db
       CORS_ORIGINS: http://localhost:3000
     volumes:
-      - ./jobs:/jobs:ro       # job configs + media (read-only); drop job dirs here
+      - ./jobs:/jobs          # job configs + media; writable so uploads can land here
       - huddletag_db:/data/db # SQLite persistence
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/jobs')"]
