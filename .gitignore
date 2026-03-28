@@ -1,13 +1,3 @@
-# Source code — not part of this deployment branch
-backend/
-frontend/
-scripts/
-docs/
-data/
-db/
-.env
-.env.example
-
 # OS
 .DS_Store
 Thumbs.db
