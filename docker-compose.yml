@@ -2,12 +2,25 @@ services:
   backend:
     build: ./backend
     environment:
-      JOBS_DIR: /jobs
-      DB_PATH: /data/db/huddletag.db
-      CORS_ORIGINS: http://localhost:3000
+      # Static backend config
+      - JOBS_DIR=/jobs
+      - DB_PATH=/data/db/huddletag.db
+      - CORS_ORIGINS=http://localhost:3000
+      # AWS credentials for S3-backed jobs.
+      # List-style (no "=value") means Docker only injects the var when it is
+      # actually set on the host — absent vars are not forwarded at all, so
+      # boto3 falls through cleanly to the next provider in its chain:
+      #   1. These env vars (highest priority)
+      #   2. ~/.aws mount below
+      #   3. EC2 / ECS IAM role (no config needed on AWS)
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      - AWS_DEFAULT_REGION
     volumes:
-      - ./jobs:/jobs:ro       # job configs + media (read-only); drop job dirs here
+      - ./jobs:/jobs          # job configs + media; writable so uploads can land here
       - huddletag_db:/data/db # SQLite persistence
+      - ~/.aws:/root/.aws:ro  # fallback credentials when env vars are not set
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/jobs')"]
       interval: 5s

@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useJobs } from '../hooks/useJob';
+import { uploadJobZip } from '../api/jobs';
 import { formatTitle } from '../utils/format';
 import ThemeToggle from '../components/ThemeToggle';
 
 export default function JobSelector() {
   const { data: jobs, isLoading, isError } = useJobs();
-  const [scpOpen, setScpOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
   const host = window.location.hostname;
 
   return (
@@ -317,76 +320,328 @@ export default function JobSelector() {
             })}
           </div>
         )}
-        {/* SCP / Add-a-job info card */}
-        <div
-          style={{
-            marginTop: 40,
-            borderRadius: 10,
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-surface)',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Card header — always visible */}
-          <button
-            onClick={() => setScpOpen(o => !o)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 20px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-          >
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-              + Add a job
-            </span>
-            <span
-              style={{
-                fontSize: 18,
-                color: 'var(--color-text-muted)',
-                lineHeight: 1,
-                transform: scpOpen ? 'rotate(180deg)' : 'none',
-                transition: 'transform 0.2s ease',
-                display: 'inline-block',
-              }}
-            >
-              ⌄
-            </span>
-          </button>
-
-          {/* Collapsible body */}
-          {scpOpen && (
-            <div
-              style={{
-                padding: '0 20px 20px',
-                borderTop: '1px solid var(--color-border)',
-              }}
-            >
-              <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 14, marginBottom: 12, lineHeight: 1.6 }}>
-                Copy your job folder to the server's mounted jobs directory. The backend
-                auto-detects new jobs every few seconds — no restart required:
-              </p>
-
-              <ScpSnippet host={host} />
-
-              <p style={{ fontSize: 12, color: 'var(--color-text-faint)', marginTop: 14, lineHeight: 1.6 }}>
-                The job folder must contain <code style={{ fontFamily: 'monospace', backgroundColor: 'var(--color-bg-subtle)', padding: '1px 5px', borderRadius: 3 }}>annot_spec.yml</code>{' '}
-                and <code style={{ fontFamily: 'monospace', backgroundColor: 'var(--color-bg-subtle)', padding: '1px 5px', borderRadius: 3 }}>dataset.csv</code> at its root.
-                For large media sets, SCP is the recommended transfer method.
-                See the <code style={{ fontFamily: 'monospace', backgroundColor: 'var(--color-bg-subtle)', padding: '1px 5px', borderRadius: 3 }}>README.md</code> for Docker volume mount instructions.
-              </p>
-            </div>
-          )}
-        </div>
+        {/* Add-a-job card */}
+        <AddJobCard
+          host={host}
+          open={addOpen}
+          onToggle={() => setAddOpen(o => !o)}
+          onUploaded={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+        />
       </main>
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Add-job card (upload + SCP fallback)
+// ---------------------------------------------------------------------------
+
+interface AddJobCardProps {
+  host: string;
+  open: boolean;
+  onToggle: () => void;
+  onUploaded: () => void;
+}
+
+function AddJobCard({ host, open, onToggle, onUploaded }: AddJobCardProps) {
+  return (
+    <div
+      style={{
+        marginTop: 40,
+        borderRadius: 10,
+        border: '1px solid var(--color-border)',
+        backgroundColor: 'var(--color-surface)',
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 20px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
+          + Add a job
+        </span>
+        <span
+          style={{
+            fontSize: 18,
+            color: 'var(--color-text-muted)',
+            lineHeight: 1,
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s ease',
+            display: 'inline-block',
+          }}
+        >
+          ⌄
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ padding: '0 20px 24px', borderTop: '1px solid var(--color-border)' }}>
+          {/* Upload section */}
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 16, marginBottom: 12, lineHeight: 1.6 }}>
+            Upload a <strong>.zip</strong> containing <code style={monoTag}>annot_spec.yml</code> and{' '}
+            <code style={monoTag}>dataset.csv</code> at its root (or inside a single top-level folder).
+            Max size: <strong>10 GiB</strong>. The job will appear automatically after upload.
+          </p>
+          <UploadZone onUploaded={onUploaded} />
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '22px 0' }}>
+            <div style={{ flex: 1, height: 1, backgroundColor: 'var(--color-border)' }} />
+            <span style={{ fontSize: 12, color: 'var(--color-text-faint)', whiteSpace: 'nowrap' }}>
+              or copy directly to the server
+            </span>
+            <div style={{ flex: 1, height: 1, backgroundColor: 'var(--color-border)' }} />
+          </div>
+
+          {/* SCP section */}
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 10, lineHeight: 1.6 }}>
+            For large media sets (&gt;10 GiB), SCP your job folder directly into the server's mounted jobs directory:
+          </p>
+          <ScpSnippet host={host} />
+          <p style={{ fontSize: 12, color: 'var(--color-text-faint)', marginTop: 10, lineHeight: 1.6 }}>
+            The backend auto-detects new jobs every few seconds — no restart required.
+            See <code style={monoTag}>README.md</code> for Docker volume mount instructions.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Drag-and-drop upload zone
+// ---------------------------------------------------------------------------
+
+type UploadState =
+  | { phase: 'idle' }
+  | { phase: 'selected'; file: File }
+  | { phase: 'uploading'; pct: number }
+  | { phase: 'success'; jobId: string; itemCount: number }
+  | { phase: 'error'; message: string };
+
+interface UploadZoneProps {
+  onUploaded: () => void;
+}
+
+function UploadZone({ onUploaded }: UploadZoneProps) {
+  const [state, setState] = useState<UploadState>({ phase: 'idle' });
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (f: File) => {
+    if (!f.name.toLowerCase().endsWith('.zip')) {
+      setState({ phase: 'error', message: 'Only .zip files are accepted.' });
+      return;
+    }
+    const MAX = 10 * 1024 * 1024 * 1024;
+    if (f.size > MAX) {
+      setState({ phase: 'error', message: 'File exceeds the 10 GiB size limit. Use SCP instead.' });
+      return;
+    }
+    setState({ phase: 'selected', file: f });
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) handleFile(f);
+    e.target.value = '';
+  };
+
+  const handleUpload = async () => {
+    if (state.phase !== 'selected') return;
+    const file = state.file;
+    setState({ phase: 'uploading', pct: 0 });
+    try {
+      const result = await uploadJobZip(file, (pct) =>
+        setState({ phase: 'uploading', pct }),
+      );
+      setState({ phase: 'success', jobId: result.job_id, itemCount: result.item_count });
+      onUploaded();
+    } catch (err) {
+      setState({ phase: 'error', message: (err as Error).message });
+    }
+  };
+
+  const reset = () => {
+    setState({ phase: 'idle' });
+    setDragging(false);
+  };
+
+  const isIdle = state.phase === 'idle' || state.phase === 'error';
+
+  return (
+    <div>
+      {/* Drop zone — shown when idle, error, or selected */}
+      {(state.phase === 'idle' || state.phase === 'error' || state.phase === 'selected') && (
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => isIdle && inputRef.current?.click()}
+          style={{
+            border: `2px dashed ${dragging ? 'var(--color-accent)' : 'var(--color-border)'}`,
+            borderRadius: 10,
+            padding: '24px 20px',
+            textAlign: 'center',
+            cursor: isIdle ? 'pointer' : 'default',
+            backgroundColor: dragging ? 'var(--color-bg-subtle)' : 'transparent',
+            transition: 'border-color 0.15s, background-color 0.15s',
+          }}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".zip"
+            style={{ display: 'none' }}
+            onChange={handleInputChange}
+          />
+          {state.phase === 'selected' ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 20 }}>📦</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+                  {state.file.name}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>
+                  {formatBytes(state.file.size)}
+                </div>
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); reset(); }}
+                style={{
+                  marginLeft: 4,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-faint)',
+                  fontSize: 16,
+                  lineHeight: 1,
+                  padding: 2,
+                }}
+                title="Remove"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>☁</div>
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 4 }}>
+                Drag &amp; drop a <strong>.zip</strong> file here, or{' '}
+                <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>browse</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>Max 10 GiB</div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Error banner */}
+      {state.phase === 'error' && (
+        <div style={{
+          marginTop: 10,
+          padding: '10px 14px',
+          borderRadius: 8,
+          backgroundColor: 'var(--color-danger-bg)',
+          border: '1px solid var(--color-danger-border)',
+          color: 'var(--color-danger-dark)',
+          fontSize: 13,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span>{state.message}</span>
+          <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700, fontSize: 14 }}>✕</button>
+        </div>
+      )}
+
+      {/* Upload progress */}
+      {state.phase === 'uploading' && (
+        <div style={{ marginTop: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Uploading…</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)' }}>{state.pct}%</span>
+          </div>
+          <div style={{ height: 6, backgroundColor: 'var(--color-bg-subtle)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${state.pct}%`,
+              backgroundColor: 'var(--color-accent)',
+              borderRadius: 3,
+              transition: 'width 0.2s ease',
+            }} />
+          </div>
+        </div>
+      )}
+
+      {/* Success */}
+      {state.phase === 'success' && (
+        <div style={{
+          marginTop: 4,
+          padding: '12px 16px',
+          borderRadius: 8,
+          backgroundColor: 'var(--color-success-bg)',
+          border: '1px solid var(--color-success-border)',
+          color: 'var(--color-success)',
+          fontSize: 13,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span>
+            Job <strong>{state.jobId}</strong> uploaded — {state.itemCount} item{state.itemCount !== 1 ? 's' : ''} ready.
+          </span>
+          <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700, fontSize: 14 }}>✕</button>
+        </div>
+      )}
+
+      {/* Upload action button */}
+      {state.phase === 'selected' && (
+        <button
+          onClick={handleUpload}
+          style={{
+            marginTop: 12,
+            width: '100%',
+            padding: '10px 0',
+            borderRadius: 8,
+            border: 'none',
+            backgroundColor: 'var(--color-accent)',
+            color: 'var(--color-surface)',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          Upload Job
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SCP snippet (unchanged)
+// ---------------------------------------------------------------------------
 
 interface ScpSnippetProps {
   host: string;
@@ -445,4 +700,22 @@ function ScpSnippet({ host }: ScpSnippetProps) {
       </button>
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const monoTag: React.CSSProperties = {
+  fontFamily: 'monospace',
+  backgroundColor: 'var(--color-bg-subtle)',
+  padding: '1px 5px',
+  borderRadius: 3,
+};
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GiB`;
 }
