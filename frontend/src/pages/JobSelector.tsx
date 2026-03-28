@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useJobs } from '../hooks/useJob';
 import { formatTitle } from '../utils/format';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function JobSelector() {
   const { data: jobs, isLoading, isError } = useJobs();
+  const [scpOpen, setScpOpen] = useState(false);
+  const host = window.location.hostname;
 
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)' }}>
@@ -39,6 +43,8 @@ export default function JobSelector() {
           </div>
           <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text)' }}>HuddleTag</span>
         </div>
+        <div style={{ flex: 1 }} />
+        <ThemeToggle />
       </header>
 
       {/* Main */}
@@ -243,7 +249,132 @@ export default function JobSelector() {
             })}
           </div>
         )}
+        {/* SCP / Add-a-job info card */}
+        <div
+          style={{
+            marginTop: 40,
+            borderRadius: 10,
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Card header — always visible */}
+          <button
+            onClick={() => setScpOpen(o => !o)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 20px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
+              + Add a job
+            </span>
+            <span
+              style={{
+                fontSize: 18,
+                color: 'var(--color-text-muted)',
+                lineHeight: 1,
+                transform: scpOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s ease',
+                display: 'inline-block',
+              }}
+            >
+              ⌄
+            </span>
+          </button>
+
+          {/* Collapsible body */}
+          {scpOpen && (
+            <div
+              style={{
+                padding: '0 20px 20px',
+                borderTop: '1px solid var(--color-border)',
+              }}
+            >
+              <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 14, marginBottom: 12, lineHeight: 1.6 }}>
+                Copy your job folder to the server's mounted jobs directory, then restart the
+                backend (or refresh once hot-reload is available):
+              </p>
+
+              <ScpSnippet host={host} />
+
+              <p style={{ fontSize: 12, color: 'var(--color-text-faint)', marginTop: 14, lineHeight: 1.6 }}>
+                The job folder must contain <code style={{ fontFamily: 'monospace', backgroundColor: 'var(--color-bg-subtle)', padding: '1px 5px', borderRadius: 3 }}>annot_spec.yml</code>{' '}
+                and <code style={{ fontFamily: 'monospace', backgroundColor: 'var(--color-bg-subtle)', padding: '1px 5px', borderRadius: 3 }}>dataset.csv</code> at its root.
+                For large media sets, SCP is the recommended transfer method.
+                See the <code style={{ fontFamily: 'monospace', backgroundColor: 'var(--color-bg-subtle)', padding: '1px 5px', borderRadius: 3 }}>README.md</code> for Docker volume mount instructions.
+              </p>
+            </div>
+          )}
+        </div>
       </main>
+    </div>
+  );
+}
+
+interface ScpSnippetProps {
+  host: string;
+}
+
+function ScpSnippet({ host }: ScpSnippetProps) {
+  const [copied, setCopied] = useState(false);
+  const snippet = `scp -r /path/to/your-job/ <user>@${host}:/mounted/jobs/`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        backgroundColor: 'var(--color-bg-subtle)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 8,
+        padding: '12px 48px 12px 16px',
+      }}
+    >
+      <code
+        style={{
+          fontFamily: "'SF Mono', 'Fira Code', 'Fira Mono', monospace",
+          fontSize: 13,
+          color: 'var(--color-text-base)',
+          wordBreak: 'break-all',
+        }}
+      >
+        {snippet}
+      </code>
+      <button
+        onClick={handleCopy}
+        title="Copy to clipboard"
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          padding: '4px 10px',
+          borderRadius: 6,
+          border: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-surface)',
+          color: copied ? 'var(--color-success)' : 'var(--color-text-muted)',
+          fontSize: 11,
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'color 0.15s',
+        }}
+      >
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
     </div>
   );
 }

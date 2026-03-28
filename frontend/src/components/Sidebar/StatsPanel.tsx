@@ -1,4 +1,5 @@
 import { getExportUrl } from '../../api/export';
+import { formatDuration } from '../../utils/format';
 
 interface StatsPanelProps {
   jobId: string;
@@ -6,6 +7,9 @@ interface StatsPanelProps {
   annotatedCount: number;
   onSave?: () => void;
   isSaving?: boolean;
+  timeSpent?: number;
+  avgPerItem?: number | null;
+  eta?: number | null;
 }
 
 export default function StatsPanel({
@@ -14,9 +18,14 @@ export default function StatsPanel({
   annotatedCount,
   onSave,
   isSaving,
+  timeSpent,
+  avgPerItem,
+  eta,
 }: StatsPanelProps) {
   const pct = itemCount > 0 ? Math.round((annotatedCount / itemCount) * 100) : 0;
   const isDone = pct === 100;
+
+  const hasTimer = timeSpent !== undefined;
 
   return (
     <div
@@ -79,6 +88,19 @@ export default function StatsPanel({
         />
       </div>
 
+      {/* Session timer rows */}
+      {hasTimer && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 2 }}>
+          <TimerRow label="Session" value={formatDuration(timeSpent!)} />
+          {avgPerItem !== null && avgPerItem !== undefined && (
+            <TimerRow label="Avg / item" value={formatDuration(avgPerItem)} />
+          )}
+          {eta !== null && eta !== undefined && !isDone && (
+            <TimerRow label="ETA" value={formatDuration(eta)} highlight />
+          )}
+        </div>
+      )}
+
       {/* Save button — shown only when an item is active */}
       {onSave && (
         <button
@@ -136,6 +158,44 @@ export default function StatsPanel({
       >
         ↓ Export CSV
       </a>
+    </div>
+  );
+}
+
+interface TimerRowProps {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}
+
+function TimerRow({ label, value, highlight = false }: TimerRowProps) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+      }}
+    >
+      <span
+        style={{
+          fontSize: 11,
+          color: 'var(--color-sidebar-dim)',
+          letterSpacing: '0.04em',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          fontSize: 11,
+          fontFamily: "'SF Mono', 'Fira Code', monospace",
+          fontWeight: 600,
+          color: highlight ? 'var(--color-accent)' : 'var(--color-text-faint)',
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

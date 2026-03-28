@@ -3,11 +3,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useJobSpec } from '../hooks/useJob';
 import { useItems } from '../hooks/useItems';
 import { useAnnotation, useSaveAnnotation } from '../hooks/useAnnotation';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useSessionTimer } from '../hooks/useSessionTimer';
 import ItemList from '../components/Sidebar/ItemList';
 import StatsPanel from '../components/Sidebar/StatsPanel';
 import ContentGrid from '../components/ContentPanel/ContentGrid';
 import FeedbackForm from '../components/FeedbackPanel/FeedbackForm';
 import ActionBar from '../components/ActionBar';
+import ThemeToggle from '../components/ThemeToggle';
+import ShortcutOverlay from '../components/ShortcutOverlay';
 import { formatTitle } from '../utils/format';
 import type { AnnotationValues } from '../types';
 
@@ -23,6 +27,7 @@ export default function AnnotatorView() {
   const [formValues, setFormValues] = useState<AnnotationValues>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showComplete, setShowComplete] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Redirect to first unannotated item when no itemId is present
   useEffect(() => {
@@ -50,6 +55,9 @@ export default function AnnotatorView() {
 
   const itemCount = items?.length ?? 0;
   const annotatedCount = items?.filter(i => i.is_annotated).length ?? 0;
+  const itemsRemaining = itemCount - annotatedCount;
+
+  const { timeSpent, avgPerItem, eta, onItemSaved } = useSessionTimer(itemsRemaining);
 
   const nextUnannotated = (() => {
     if (!items || !itemId) return undefined;
@@ -65,6 +73,7 @@ export default function AnnotatorView() {
     setSaveError(null);
     try {
       await saveMutation.mutateAsync({ itemId, values: formValues });
+      onItemSaved();
       if (advance && nextUnannotated) {
         navigate(`/jobs/${jobId}/items/${nextUnannotated.item_id}`);
       } else if (advance && !nextUnannotated) {
@@ -74,6 +83,17 @@ export default function AnnotatorView() {
       setSaveError('Failed to save. Please try again.');
     }
   };
+
+  useKeyboardShortcuts({
+    jobId: jobId ?? '',
+    items: items ?? [],
+    currentItemId: itemId,
+    feedbackFields: spec?.feedbacks ?? [],
+    formValues,
+    onFormChange: setFormValues,
+    onSave: () => handleSave(false),
+    onToggleShortcutOverlay: () => setShowShortcuts(v => !v),
+  });
 
   const isLoading = specLoading || itemsLoading;
   const isError = specError || itemsError;
@@ -159,6 +179,30 @@ export default function AnnotatorView() {
 
         <div style={{ flex: 1 }} />
 
+        <button
+          onClick={() => setShowShortcuts(v => !v)}
+          title="Keyboard shortcuts (?)"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.12)',
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          ?
+        </button>
+
+        <ThemeToggle onDarkBg />
+
         {currentItem?.is_annotated && (
           <span
             style={{
@@ -175,6 +219,8 @@ export default function AnnotatorView() {
           </span>
         )}
       </header>
+
+      {showShortcuts && <ShortcutOverlay onClose={() => setShowShortcuts(false)} />}
 
       {/* ── Body ───────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
@@ -221,6 +267,9 @@ export default function AnnotatorView() {
             annotatedCount={annotatedCount}
             onSave={currentItem ? () => handleSave(false) : undefined}
             isSaving={saveMutation.isPending}
+            timeSpent={timeSpent}
+            avgPerItem={avgPerItem}
+            eta={eta}
           />
         </aside>
 
