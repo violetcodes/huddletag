@@ -249,6 +249,42 @@ export default function JobSelector() {
             })}
           </div>
         )}
+        {/* Download sample job */}
+        <div style={{ marginTop: 32, marginBottom: -8, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <a
+            href="/api/sample-job.zip"
+            download
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-muted)',
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: 'none',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-accent)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--color-accent)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+            }}
+          >
+            ↓ Download sample job
+          </a>
+          <span style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>
+            See the expected folder structure before uploading your own job.
+          </span>
+        </div>
+
         {/* SCP / Add-a-job info card */}
         <div
           style={{
