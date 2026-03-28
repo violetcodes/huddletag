@@ -8,6 +8,7 @@ import StatsPanel from '../components/Sidebar/StatsPanel';
 import ContentGrid from '../components/ContentPanel/ContentGrid';
 import FeedbackForm from '../components/FeedbackPanel/FeedbackForm';
 import ActionBar from '../components/ActionBar';
+import ThemeToggle from '../components/ThemeToggle';
 import { formatTitle } from '../utils/format';
 import type { AnnotationValues } from '../types';
 
@@ -158,6 +159,8 @@ export default function AnnotatorView() {
         )}
 
         <div style={{ flex: 1 }} />
+
+        <ThemeToggle onDarkBg />
 
         {currentItem?.is_annotated && (
           <span

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useJobs } from '../hooks/useJob';
 import { formatTitle } from '../utils/format';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function JobSelector() {
   const { data: jobs, isLoading, isError } = useJobs();
@@ -39,6 +40,8 @@ export default function JobSelector() {
           </div>
           <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text)' }}>HuddleTag</span>
         </div>
+        <div style={{ flex: 1 }} />
+        <ThemeToggle />
       </header>
 
       {/* Main */}
