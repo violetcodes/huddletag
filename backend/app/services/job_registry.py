@@ -2,6 +2,7 @@ import threading
 from pathlib import Path
 
 from .dataset import Item, parse_dataset
+from .s3_media import is_s3_path, parse_s3_url, verify_s3_sample
 from .spec_parser import AnnotSpec, parse_spec
 
 
@@ -32,6 +33,22 @@ def _scan_jobs_dir(jobs_dir: str) -> dict[str, Job]:
             try:
                 spec = parse_spec(spec_path)
                 items = parse_dataset(csv_path)
+
+                # S3 jobs: verify connectivity upfront so there is no cold-start
+                # surprise the first time a user clicks on an item.
+                if is_s3_path(spec.data_dir):
+                    if not items:
+                        print(f"[job_registry] Skipping '{job_id}': S3 job has empty dataset")
+                        continue
+                    bucket, prefix = parse_s3_url(spec.data_dir)
+                    sample_path = items[0].content_paths[0]
+                    try:
+                        verify_s3_sample(bucket, prefix, sample_path)
+                        print(f"[job_registry] S3 OK for '{job_id}' (s3://{bucket}/{prefix})")
+                    except RuntimeError as exc:
+                        print(f"[job_registry] Skipping '{job_id}': {exc}")
+                        continue
+
                 found[job_id] = Job(job_id=job_id, spec=spec, items=items)
             except Exception as exc:
                 print(f"[job_registry] Skipping '{job_id}': {exc}")

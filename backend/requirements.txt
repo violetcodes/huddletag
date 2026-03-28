@@ -3,6 +3,7 @@ uvicorn[standard]
 pydantic-settings
 pyyaml
 aiofiles
+boto3
 
 # test dependencies
 pytest>=8.0
