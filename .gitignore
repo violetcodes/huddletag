@@ -25,5 +25,5 @@ Thumbs.db
 # Runtime data directory — not committed; mount via Docker volume
 data/
 
-# To exclude a specific private job from git, add a line like:
-#   jobs/my-private-job/
+# New jobs added locally stay local — existing tracked jobs still ship with the repo
+jobs/
