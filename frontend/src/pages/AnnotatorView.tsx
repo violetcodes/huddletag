@@ -4,6 +4,7 @@ import { useJobSpec } from '../hooks/useJob';
 import { useItems } from '../hooks/useItems';
 import { useAnnotation, useSaveAnnotation } from '../hooks/useAnnotation';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useSessionTimer } from '../hooks/useSessionTimer';
 import ItemList from '../components/Sidebar/ItemList';
 import StatsPanel from '../components/Sidebar/StatsPanel';
 import ContentGrid from '../components/ContentPanel/ContentGrid';
@@ -54,6 +55,9 @@ export default function AnnotatorView() {
 
   const itemCount = items?.length ?? 0;
   const annotatedCount = items?.filter(i => i.is_annotated).length ?? 0;
+  const itemsRemaining = itemCount - annotatedCount;
+
+  const { timeSpent, avgPerItem, eta, onItemSaved } = useSessionTimer(itemsRemaining);
 
   const nextUnannotated = (() => {
     if (!items || !itemId) return undefined;
@@ -69,6 +73,7 @@ export default function AnnotatorView() {
     setSaveError(null);
     try {
       await saveMutation.mutateAsync({ itemId, values: formValues });
+      onItemSaved();
       if (advance && nextUnannotated) {
         navigate(`/jobs/${jobId}/items/${nextUnannotated.item_id}`);
       } else if (advance && !nextUnannotated) {
@@ -262,6 +267,9 @@ export default function AnnotatorView() {
             annotatedCount={annotatedCount}
             onSave={currentItem ? () => handleSave(false) : undefined}
             isSaving={saveMutation.isPending}
+            timeSpent={timeSpent}
+            avgPerItem={avgPerItem}
+            eta={eta}
           />
         </aside>
 
