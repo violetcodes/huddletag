@@ -21,3 +21,9 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime data directory — not committed; mount via Docker volume
+data/
+
+# New jobs added locally stay local — existing tracked jobs still ship with the repo
+jobs/

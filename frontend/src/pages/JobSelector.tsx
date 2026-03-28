@@ -106,7 +106,7 @@ export default function JobSelector() {
             >
               JOBS_DIR
             </code>{' '}
-            and restart the backend.
+            and the job list will refresh automatically.
           </div>
         )}
 
@@ -218,7 +218,7 @@ export default function JobSelector() {
                     </div>
                   </div>
 
-                  {/* CTA */}
+                  {/* Primary CTA */}
                   <Link
                     to={`/jobs/${job.job_id}`}
                     style={{
@@ -244,6 +244,74 @@ export default function JobSelector() {
                   >
                     {!isStarted ? 'Start Annotating' : isDone ? '✓ Review' : 'Continue →'}
                   </Link>
+
+                  {/* Secondary actions */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <a
+                      href={`/api/jobs/${job.job_id}/zip`}
+                      download
+                      title="Download this job folder as a zip"
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                        padding: '7px 0',
+                        borderRadius: 7,
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg)',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.12s, color 0.12s',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-accent)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-accent)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+                      }}
+                    >
+                      ↓ Zip
+                    </a>
+                    <a
+                      href={`/api/jobs/${job.job_id}/export`}
+                      download
+                      title="Export annotations as CSV"
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                        padding: '7px 0',
+                        borderRadius: 7,
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg)',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.12s, color 0.12s',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-success)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-success)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+                      }}
+                    >
+                      ↑ Export
+                    </a>
+                  </div>
                 </div>
               );
             })}
@@ -300,8 +368,8 @@ export default function JobSelector() {
               }}
             >
               <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 14, marginBottom: 12, lineHeight: 1.6 }}>
-                Copy your job folder to the server's mounted jobs directory, then restart the
-                backend (or refresh once hot-reload is available):
+                Copy your job folder to the server's mounted jobs directory. The backend
+                auto-detects new jobs every few seconds — no restart required:
               </p>
 
               <ScpSnippet host={host} />
