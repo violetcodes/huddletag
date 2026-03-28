@@ -1,0 +1,14 @@
+label,path
+True,/home/ubuntu/novus-active-learning-ship/cloud-infer/data/tests/ASCUS00059_02_04_618_346430009082_250110_094040.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430007326_250113_103616.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430008415_250113_110822.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430008597_250113_101741.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430009082_250113_101459.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430011138_250113_102233.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00071_02_04_639_346430013787_250113_060845.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00073_02_04_639_346430007144_250113_073641.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00086_02_04_639_346430013803_250113_035522.mp4
+False,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00086_02_04_639_346430013803_250113_070952.mp4
+True,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430010478_250113_102955.mp4
+True,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00059_02_04_639_346430010478_250113_104527.mp4
+True,/home/hitech/novus/novus-active-learning/cloud-infer/data/test_videos/seatbelt_android/ASCUS00075_02_04_639_346430015915_250113_081647.mp4

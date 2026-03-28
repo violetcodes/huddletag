@@ -1,0 +1,17 @@
+# Docker: mount your media directory at /data/multimodal (see docker-compose.yml).
+# Local dev: override with JOBS_DIR or update this path to an absolute local path.
+data_dir: /jobs/multimodal/media
+
+content_schema:
+  - slot: image
+  - slot: video
+
+feedbacks:
+  - name: issue_source
+    type: checkbox
+    options:
+      - img
+      - video
+
+  - name: comment
+    type: text

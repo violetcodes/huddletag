@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      JOBS_DIR: /jobs
+      DB_PATH: /data/db/huddletag.db
+      CORS_ORIGINS: http://localhost:3000
+    volumes:
+      - ./jobs:/jobs:ro       # job configs + media (read-only); drop job dirs here
+      - huddletag_db:/data/db # SQLite persistence
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/jobs')"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  huddletag_db:

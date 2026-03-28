@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+pyyaml
+aiofiles
+
+# test dependencies
+pytest>=8.0
+httpx>=0.27

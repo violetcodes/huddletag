@@ -1,0 +1,23 @@
+# Annotation spec — DSM video pairwise comparison
+# Task: annotators view two DSM (Driver State Monitoring) videos side-by-side
+# and select which one is better, then explain the reason.
+#
+# Docker usage: mount the video directory at the path below.
+# Local testing: update data_dir to the absolute path on your machine, e.g.:
+#   data_dir: /home/hitech/novus/testing_data/novus-anyverse-video-samples
+
+data_dir: /jobs/compare-dsm-vids/media
+
+content_schema:
+  - slot: video_a    # left / first video in the pair
+  - slot: video_b    # right / second video in the pair
+
+feedbacks:
+  - name: preferred_video
+    type: radio
+    options:
+      - Video A
+      - Video B
+
+  - name: reason
+    type: text

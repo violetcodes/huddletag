@@ -1,0 +1,6 @@
+item_id,content_paths
+001,prompts/prompt_001.txt|images/114731_576.jpg|images/122308_493.jpg
+002,prompts/prompt_002.txt|images/122308_493.jpg|images/133426_36.jpg
+003,prompts/prompt_003.txt|images/133426_36.jpg|images/140510_613.jpg
+004,prompts/prompt_004.txt|images/140510_613.jpg|images/141426_703.jpg
+005,prompts/prompt_005.txt|images/141426_703.jpg|images/114731_576.jpg

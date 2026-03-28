@@ -1,0 +1,26 @@
+# Annotation spec — Image generation evaluation
+# Task: annotators review a prompt, an input reference image, and a generated
+# output image, then rate overall quality and add an optional comment.
+#
+# Docker usage: job folder is self-contained; no extra mounts needed.
+#   data_dir points inside /jobs so only ./jobs:/jobs is required.
+
+data_dir: /jobs/imgen-eval/media
+
+content_schema:
+  - slot: prompt        # text prompt used for generation
+  - slot: input_image   # reference / conditioning image
+  - slot: output_image  # generated output to evaluate
+
+feedbacks:
+  - name: quality_rating
+    type: radio
+    options:
+      - Excellent
+      - Good
+      - Fair
+      - Poor
+      - Very Poor
+
+  - name: comment
+    type: text
