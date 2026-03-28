@@ -43,39 +43,12 @@ def list_jobs() -> list[JobSummary]:
     return result
 
 
-_SAMPLE_JOB_PREFERENCE = ["imgen-eval", "compare-dsm-vids", "multimodal"]
-# File extensions to include (skip large binary media by default)
-_MEDIA_EXTS = {".yml", ".yaml", ".csv", ".txt", ".md", ".json"}
-
-
-def _pick_sample_job() -> Path | None:
-    """Return a jobs-dir subdirectory to use as the sample download."""
-    base = Path(settings.JOBS_DIR)
-    if not base.exists():
-        return None
-    # Try preferred names first
-    for name in _SAMPLE_JOB_PREFERENCE:
-        candidate = base / name
-        if candidate.is_dir():
-            return candidate
-    # Fall back to first available job dir
-    for subdir in sorted(base.iterdir()):
-        if subdir.is_dir():
-            return subdir
-    return None
-
-
 def _zip_job_dir(job_dir: Path) -> io.BytesIO:
-    """
-    Zip the job directory, including all config/data files.
-    Binary media files (images/videos) are skipped to keep the download small.
-    """
+    """Zip an entire job directory into an in-memory buffer."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         for file_path in sorted(job_dir.rglob("*")):
             if not file_path.is_file():
-                continue
-            if file_path.suffix.lower() not in _MEDIA_EXTS:
                 continue
             arcname = Path(job_dir.name) / file_path.relative_to(job_dir)
             zf.write(file_path, arcname=str(arcname))
@@ -83,22 +56,22 @@ def _zip_job_dir(job_dir: Path) -> io.BytesIO:
     return buf
 
 
-@router.get("/sample-job.zip")
-def download_sample_job():
-    """Download a minimal sample job folder as a zip file."""
-    job_dir = _pick_sample_job()
-    if not job_dir:
-        raise HTTPException(status_code=404, detail="No jobs available to use as sample")
+@router.get("/jobs/{job_id}/zip")
+def download_job_zip(job_id: str):
+    """Download a job folder as a zip archive (all files included)."""
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job_dir = Path(settings.JOBS_DIR) / job_id
+    if not job_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Job directory not found on disk")
 
     buf = _zip_job_dir(job_dir)
-    filename = f"{job_dir.name}.zip"
-
     return StreamingResponse(
         buf,
         media_type="application/zip",
-        headers={
-            "Content-Disposition": f'attachment; filename="{filename}"',
-        },
+        headers={"Content-Disposition": f'attachment; filename="{job_id}.zip"'},
     )
 
 

@@ -218,7 +218,7 @@ export default function JobSelector() {
                     </div>
                   </div>
 
-                  {/* CTA */}
+                  {/* Primary CTA */}
                   <Link
                     to={`/jobs/${job.job_id}`}
                     style={{
@@ -244,47 +244,79 @@ export default function JobSelector() {
                   >
                     {!isStarted ? 'Start Annotating' : isDone ? '✓ Review' : 'Continue →'}
                   </Link>
+
+                  {/* Secondary actions */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <a
+                      href={`/api/jobs/${job.job_id}/zip`}
+                      download
+                      title="Download this job folder as a zip"
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                        padding: '7px 0',
+                        borderRadius: 7,
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg)',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.12s, color 0.12s',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-accent)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-accent)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+                      }}
+                    >
+                      ↓ Zip
+                    </a>
+                    <a
+                      href={`/api/jobs/${job.job_id}/export`}
+                      download
+                      title="Export annotations as CSV"
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 5,
+                        padding: '7px 0',
+                        borderRadius: 7,
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg)',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'border-color 0.12s, color 0.12s',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-success)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-success)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
+                        (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+                      }}
+                    >
+                      ↑ Export
+                    </a>
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
-        {/* Download sample job */}
-        <div style={{ marginTop: 32, marginBottom: -8, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a
-            href="/api/sample-job.zip"
-            download
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 16px',
-              borderRadius: 8,
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text-muted)',
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: 'none',
-              cursor: 'pointer',
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-accent)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--color-accent)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
-            }}
-          >
-            ↓ Download sample job
-          </a>
-          <span style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>
-            See the expected folder structure before uploading your own job.
-          </span>
-        </div>
-
         {/* SCP / Add-a-job info card */}
         <div
           style={{
