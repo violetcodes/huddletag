@@ -1,14 +1,14 @@
 # Technical Specification — HuddleTag
 
-**Version:** 1.0  
+**Version:** 1.3  
 **Date:** 2026-03-28  
-**Status:** Approved — ready for implementation
+**Status:** Implemented — reflects shipped codebase (v1 core + Phase 1–3 features)
 
 ---
 
 ## 1. Purpose
 
-This document captures all architectural and implementation decisions for HuddleTag v1.0. It supplements the `prd.md` product requirements with concrete technical choices, folder structure, API contracts, data models, and Docker topology. It is the single source of truth before coding begins.
+This document captures all architectural and implementation decisions for HuddleTag. It supplements the `prd.md` product requirements with concrete technical choices, folder structure, API contracts, data models, and Docker topology. It reflects the current shipped state of the codebase including Phase 1–3 features (dark mode, keyboard shortcuts, session timer, SCP snippet, feature-rich media, job zip download, hot-reload, job upload, and S3 media backend).
 
 ---
 
@@ -37,19 +37,20 @@ huddletag/
 │   ├── app/
 │   │   ├── main.py                   # FastAPI app factory, router registration, startup hooks
 │   │   ├── api/
-│   │   │   ├── jobs.py               # GET /api/jobs, GET /api/jobs/{job_id}/spec
+│   │   │   ├── jobs.py               # GET /api/jobs, GET /api/jobs/{job_id}/spec, GET /{job_id}/zip, POST /upload
 │   │   │   ├── items.py              # GET /api/jobs/{job_id}/items
 │   │   │   ├── annotations.py        # GET/POST /api/jobs/{job_id}/annotations/{item_id}
-│   │   │   ├── media.py              # GET /api/media/{job_id}/{path:path}
+│   │   │   ├── media.py              # GET /api/media/{job_id}/{path:path} (local + S3 presigned)
 │   │   │   └── export.py             # GET /api/jobs/{job_id}/export
 │   │   ├── core/
 │   │   │   ├── config.py             # Settings via pydantic-settings (env vars)
 │   │   │   └── database.py           # SQLite init, connection, table creation
 │   │   └── services/
-│   │       ├── job_registry.py       # Scans JOBS_DIR, builds Job objects at startup
+│   │       ├── job_registry.py       # Scans JOBS_DIR at startup + 10s background reload loop
 │   │       ├── spec_parser.py        # Parses annot_spec.yml → validated Python models
 │   │       ├── dataset.py            # Parses dataset CSV → list of Item objects
-│   │       └── exporter.py           # Joins DB annotations onto dataset CSV → export CSV
+│   │       ├── exporter.py           # Joins DB annotations onto dataset CSV → export CSV
+│   │       └── s3_media.py           # S3 presigned URL generation for s3:// data_dir jobs
 │   ├── requirements.txt
 │   └── Dockerfile                    # FROM python:3.12-slim
 │
@@ -63,25 +64,32 @@ huddletag/
 │   │   ├── components/
 │   │   │   ├── Sidebar/
 │   │   │   │   ├── ItemList.tsx      # Scrollable list of items with completion badge
-│   │   │   │   └── StatsPanel.tsx    # Progress bar, Save button, Export button
+│   │   │   │   └── StatsPanel.tsx    # Progress bar, timer, ETA, Export button
 │   │   │   ├── ContentPanel/
 │   │   │   │   ├── ContentGrid.tsx   # Responsive grid for multiple content slots
-│   │   │   │   ├── ImageSlot.tsx     # <img> renderer
-│   │   │   │   ├── VideoSlot.tsx     # HTML5 <video> with poster/thumbnail
-│   │   │   │   └── TextSlot.tsx      # Styled text block
+│   │   │   │   ├── ImageSlot.tsx     # <img> renderer with zoom & pan
+│   │   │   │   ├── VideoSlot.tsx     # HTML5 <video> with sync support
+│   │   │   │   ├── TextSlot.tsx      # Scrollable text block
+│   │   │   │   └── VideoSyncContext.ts  # Shared play/seek controller for multi-video sync
 │   │   │   ├── FeedbackPanel/
 │   │   │   │   ├── FeedbackForm.tsx  # Renders all feedback fields from spec
 │   │   │   │   ├── RadioField.tsx
 │   │   │   │   ├── CheckboxField.tsx
 │   │   │   │   └── TextField.tsx
-│   │   │   └── ActionBar.tsx         # Save + Next Item buttons
+│   │   │   ├── ActionBar.tsx         # Save + Next Item buttons
+│   │   │   ├── ThemeToggle.tsx       # Dark / light mode toggle (sun/moon icon)
+│   │   │   └── ShortcutOverlay.tsx   # Keyboard shortcut cheat-sheet modal
 │   │   ├── pages/
-│   │   │   ├── JobSelector.tsx       # Landing page — list of available jobs
-│   │   │   └── AnnotatorView.tsx     # Main annotation workspace
+│   │   │   ├── JobSelector.tsx       # Landing page — job list, upload, SCP snippet
+│   │   │   ├── AnnotatorView.tsx     # Main annotation workspace
+│   │   │   └── NotFound.tsx
 │   │   ├── hooks/
 │   │   │   ├── useJob.ts
 │   │   │   ├── useItems.ts
-│   │   │   └── useAnnotation.ts
+│   │   │   ├── useAnnotation.ts
+│   │   │   ├── useKeyboardShortcuts.ts  # Keyboard navigation and save shortcuts
+│   │   │   ├── useSessionTimer.ts       # Session elapsed time, avg per item, ETA
+│   │   │   └── useTheme.ts              # Theme preference (localStorage + system pref)
 │   │   ├── types/
 │   │   │   └── index.ts              # Job, Item, Spec, Annotation, FeedbackField…
 │   │   ├── App.tsx                   # Router (job selector → annotator view)
@@ -108,7 +116,8 @@ huddletag/
 │   └── v2_plan.md                    # v2 feature backlog and roadmap
 │
 ├── scripts/
-│   └── smoke_test.sh                 # End-to-end smoke test (Docker)
+│   ├── smoke_test.sh                 # End-to-end smoke test (Docker)
+│   └── release_images.sh             # Build backend + frontend Docker images (ECR push placeholder)
 │
 ├── docker-compose.yml
 ├── .env.example
@@ -143,9 +152,9 @@ JOBS_DIR/
 
 Each `annot_spec.yml` declares a `data_dir`. The backend resolves media paths as `{data_dir}/{relative_path_from_csv}`. In Docker, `data_dir` must match the container-internal mount path.
 
-### 4.3 Hot-reload of Jobs (v1 — static)
+### 4.3 Hot-reload of Jobs
 
-Jobs are loaded once at server startup. Adding a new job directory requires a server restart. Dynamic reloading is a v2 concern.
+Jobs are loaded at server startup and then rescanned every 10 seconds via a background `asyncio` loop. New job directories placed in `JOBS_DIR` (or extracted by the upload endpoint) appear automatically in the UI without any server restart.
 
 ---
 
@@ -157,8 +166,14 @@ Jobs are loaded once at server startup. Adding a new job directory requires a se
 | `DB_PATH` | `./db/huddletag.db` | `/data/db/huddletag.db` | SQLite database file path |
 | `BACKEND_PORT` | `8000` | `8000` | Uvicorn listen port |
 | `CORS_ORIGINS` | `http://localhost:5173` | `http://localhost:3000` | Allowed CORS origins |
+| `AWS_ACCESS_KEY_ID` | _(unset)_ | _(pass-through)_ | AWS key — only needed for S3-backed jobs |
+| `AWS_SECRET_ACCESS_KEY` | _(unset)_ | _(pass-through)_ | AWS secret |
+| `AWS_SESSION_TOKEN` | _(unset)_ | _(pass-through)_ | AWS session token (temporary credentials) |
+| `AWS_DEFAULT_REGION` | _(unset)_ | _(pass-through)_ | AWS region |
 
-Defined in `.env` (local) or `docker-compose.yml` `environment:` section.
+Defined in `.env` (local) or `docker-compose.yml` `environment:` section. See `.env.example` for the full template.
+
+**AWS credential resolution order (boto3 standard):** env vars → `~/.aws` credentials file (mounted `~/.aws:/root/.aws:ro`) → EC2/ECS IAM role.
 
 ---
 
@@ -172,6 +187,8 @@ All endpoints are prefixed with `/api`. All request/response bodies are JSON unl
 |---|---|---|
 | `GET` | `/api/jobs` | List all loaded jobs with `job_id`, item count, and annotated count |
 | `GET` | `/api/jobs/{job_id}/spec` | Return the parsed annotation spec (content schema + feedback fields) |
+| `GET` | `/api/jobs/{job_id}/zip` | Stream the job folder as a downloadable `.zip` archive |
+| `POST` | `/api/jobs/upload` | Upload a `.zip` containing `annot_spec.yml` + `dataset.csv`; extracts to `JOBS_DIR`; max 11 GB |
 
 **`GET /api/jobs` response:**
 ```json
@@ -250,7 +267,8 @@ All endpoints are prefixed with `/api`. All request/response bodies are JSON unl
 |---|---|---|
 | `GET` | `/api/media/{job_id}/{path:path}` | Stream a media file from the job's `data_dir`. Supports `Range` header for video seeking. |
 
-Returns the raw file with the appropriate `Content-Type`. Returns `404` if the file is not found under `data_dir` (path traversal is rejected).
+For **local** jobs: returns the raw file with the appropriate `Content-Type`. Path traversal is rejected.  
+For **S3-backed** jobs (`data_dir: s3://...`): returns a `307` redirect to a short-lived presigned URL so the browser fetches media directly from S3 without proxying through the backend.
 
 ### 6.5 Export
 
@@ -433,7 +451,7 @@ Vite proxies all `/api/*` requests to `http://localhost:8000` via `vite.config.t
 
 ---
 
-## 13. Python Dependencies (initial)
+## 13. Python Dependencies
 
 ```
 fastapi
@@ -441,6 +459,8 @@ uvicorn[standard]
 pydantic-settings
 pyyaml
 aiofiles          # async file streaming for /api/media
+python-multipart  # UploadFile support for POST /api/jobs/upload
+boto3             # S3 presigned URL generation for s3:// data_dir jobs
 ```
 
 No ORM — raw `sqlite3` from the Python standard library is sufficient for the single-table schema.
@@ -459,14 +479,22 @@ Dev: `vite`, `typescript`, `@types/react`, `@types/react-dom`
 
 ---
 
-## 15. Out of Scope (v1)
+## 15. Shipped Beyond v1 Scope
 
-- User authentication / annotator accounts
-- Per-annotator annotation rows
-- Job management UI (add/remove jobs without restart)
-- Conditional feedback fields
-- Analytics dashboard
-- Batch assignment
+The following features from the v2 roadmap have been implemented and are part of the current codebase:
+
+- **Dark / light mode toggle** (Phase 1, feature 3)
+- **Keyboard shortcuts** with cheat-sheet overlay (Phase 1, feature 4)
+- **Session timer, avg per item, ETA** in sidebar (Phase 1, feature 5)
+- **SCP snippet card** on Job Selector (Phase 1, feature 6)
+- **Feature-rich media rendering** — image zoom/pan, scrollable text, multi-video sync (Phase 2, feature 7)
+- **Per-job zip download** from Job Selector (Phase 2, feature 8)
+- **Hot-reload of jobs** — 10s background rescan loop (Phase 2, feature 10)
+- **Job upload via zip** from UI (Phase 3, feature 9)
+- **S3 media backend** — presigned URL redirect for `s3://` `data_dir` (Phase 3, feature 15)
+- **Tiered AWS credentials** — env vars → `~/.aws` → EC2 IAM role (Phase 3)
+
+Still deferred (Phase 4+): user identity / roles, per-annotator annotation rows, batch assignment, analytics dashboard, conditional feedback fields, job split/merge.
 
 ---
 

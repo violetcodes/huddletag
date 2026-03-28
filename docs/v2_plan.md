@@ -1,14 +1,14 @@
 # HuddleTag v2 — Feature Plan
 
 **Date:** 2026-03-28  
-**Status:** Planning  
+**Status:** Phase 1–3 shipped; Phase 4 pending  
 **Scope:** Everything deferred from v1, plus new features gathered from feedback.
 
 ---
 
 ## Context
 
-v1 ships a working single-user annotation tool: multi-job loading, media streaming, structured feedback forms (radio/checkbox/text), CSV export, and a Docker deployment. v2 builds on that foundation with quality-of-life improvements, richer media interaction, lightweight identity, team workflow, and infrastructure flexibility.
+v1 shipped a working single-user annotation tool: multi-job loading, media streaming, structured feedback forms (radio/checkbox/text), CSV export, and a Docker deployment. Phases 1–3 have since been implemented, adding dark mode, keyboard shortcuts, session timer, SCP snippet, feature-rich media rendering, job zip download, hot-reload, job upload, and S3 media backend. Phase 4 (identity, per-annotator rows, assignment, analytics) remains pending.
 
 ---
 
@@ -18,7 +18,7 @@ v1 ships a working single-user annotation tool: multi-job loading, media streami
 
 ### Tier 1 — Low-Hanging Fruit (hours each)
 
-#### 1. Git Repo + Public GitHub Push
+#### 1. Git Repo + Public GitHub Push ✅ Shipped
 **Effort:** ~15 min  
 **Depends on:** nothing
 
@@ -27,7 +27,7 @@ Unblocks collaboration, versioning, and issue tracking for all subsequent work.
 
 ---
 
-#### 2. README Update + Commit Sample Images
+#### 2. README Update + Commit Sample Images ✅ Shipped
 **Effort:** ~30 min  
 **Depends on:** 1
 
@@ -38,7 +38,7 @@ Update `README.md` with:
 
 ---
 
-#### 3. Dark / Light Mode Toggle
+#### 3. Dark / Light Mode Toggle ✅ Shipped
 **Effort:** 2–3 hrs  
 **Depends on:** nothing
 
@@ -48,7 +48,7 @@ Zero backend changes. No new dependencies if using native CSS variables.
 
 ---
 
-#### 4. Keyboard Shortcuts
+#### 4. Keyboard Shortcuts ✅ Shipped
 **Effort:** 2–3 hrs  
 **Depends on:** nothing
 
@@ -66,7 +66,7 @@ Number keys operate on whichever radio field currently has focus, or the first r
 
 ---
 
-#### 5. Progress ETA + Time-Spent Counter
+#### 5. Progress ETA + Time-Spent Counter ✅ Shipped
 **Effort:** 2–3 hrs  
 **Depends on:** nothing
 
@@ -80,7 +80,7 @@ Display in `StatsPanel` alongside the existing progress bar. No backend changes.
 
 ---
 
-#### 6. SCP Snippet for Local-Network Job Upload
+#### 6. SCP Snippet for Local-Network Job Upload ✅ Shipped
 **Effort:** ~1 hr  
 **Depends on:** nothing
 
@@ -96,7 +96,7 @@ Then restart the server (or, once hot-reload lands, just refresh). No backend ch
 
 ### Tier 2 — Medium Effort (days each)
 
-#### 7. Feature-Rich Media Rendering
+#### 7. Feature-Rich Media Rendering ✅ Shipped
 **Effort:** 1–2 days  
 **Depends on:** nothing (pure frontend)
 
@@ -119,7 +119,7 @@ Implementation: collect `ref`s in `ContentGrid`, pass a shared `syncController` 
 
 ---
 
-#### 8. Download Sample Job Zip
+#### 8. Download Sample Job Zip ✅ Shipped
 **Effort:** 3–4 hrs  
 **Depends on:** nothing
 
@@ -128,7 +128,7 @@ Frontend: a "Download sample job" button on the Job Selector page. Annotators an
 
 ---
 
-#### 9. Job Upload via Zip (UI)
+#### 9. Job Upload via Zip (UI) ✅ Shipped
 **Effort:** 6–8 hrs  
 **Depends on:** 10 (hot-reload)
 
@@ -138,7 +138,7 @@ The SCP snippet (feature 6) stays as a power-user alternative for large media se
 
 ---
 
-#### 10. Hot-Reload of Jobs (No Restart Required)
+#### 10. Hot-Reload of Jobs (No Restart Required) ✅ Shipped
 **Effort:** 4–6 hrs  
 **Depends on:** nothing  
 *Noted as a v2 concern in `tech_spec.md`.*
@@ -232,7 +232,7 @@ Conflict detection: if two annotators annotate the same item differently, a `con
 
 ---
 
-#### 15. S3 Support for Media
+#### 15. S3 Support for Media ✅ Shipped
 **Effort:** 1–2 days  
 **Depends on:** nothing
 
@@ -284,54 +284,54 @@ Frontend: `recharts` or `chart.js` for visualisations (lightweight, no heavy BI 
 
 ## Prioritised Roadmap
 
-### Phase 1 — Quick Wins (do first, ship fast)
+### Phase 1 — Quick Wins ✅ Complete
 
-| # | Feature | Effort |
-|---|---|---|
-| 1 | Git repo + GitHub push | 15 min |
-| 2 | README update | 30 min |
-| 3 | Dark / light mode | 2–3 hrs |
-| 4 | Keyboard shortcuts | 2–3 hrs |
-| 5 | Progress ETA + timer | 2–3 hrs |
-| 6 | SCP snippet | 1 hr |
+| # | Feature | Effort | Status |
+|---|---|---|---|
+| 1 | Git repo + GitHub push | 15 min | ✅ Shipped |
+| 2 | README update | 30 min | ✅ Shipped |
+| 3 | Dark / light mode | 2–3 hrs | ✅ Shipped |
+| 4 | Keyboard shortcuts | 2–3 hrs | ✅ Shipped |
+| 5 | Progress ETA + timer | 2–3 hrs | ✅ Shipped |
+| 6 | SCP snippet | 1 hr | ✅ Shipped |
 
 **Total Phase 1: ~1 day**
 
 ---
 
-### Phase 2 — Media & UX Polish
+### Phase 2 — Media & UX Polish ✅ Mostly Complete
 
-| # | Feature | Effort |
-|---|---|---|
-| 7 | Feature-rich media rendering (text scroll, image zoom/pan, video sync) | 1–2 days |
-| 8 | Download sample job zip | 3–4 hrs |
-| 10 | Hot-reload of jobs | 4–6 hrs |
-| 11 | Conditional feedback fields | 6–8 hrs |
+| # | Feature | Effort | Status |
+|---|---|---|---|
+| 7 | Feature-rich media rendering (text scroll, image zoom/pan, video sync) | 1–2 days | ✅ Shipped |
+| 8 | Download sample job zip | 3–4 hrs | ✅ Shipped |
+| 10 | Hot-reload of jobs | 4–6 hrs | ✅ Shipped |
+| 11 | Conditional feedback fields | 6–8 hrs | Pending |
 
 **Total Phase 2: ~3–4 days**
 
 ---
 
-### Phase 3 — Job Management
+### Phase 3 — Job Management ✅ Mostly Complete
 
-| # | Feature | Effort |
-|---|---|---|
-| 9 | Job upload via zip (UI) | 6–8 hrs |
-| 12 | Job split + merge | 8–10 hrs |
-| 15 | S3 media support | 1–2 days |
+| # | Feature | Effort | Status |
+|---|---|---|---|
+| 9 | Job upload via zip (UI) | 6–8 hrs | ✅ Shipped |
+| 12 | Job split + merge | 8–10 hrs | Pending |
+| 15 | S3 media support | 1–2 days | ✅ Shipped |
 
 **Total Phase 3: ~3–5 days**
 
 ---
 
-### Phase 4 — Team & Identity
+### Phase 4 — Team & Identity (Pending)
 
-| # | Feature | Effort |
-|---|---|---|
-| 13 | UUID-based user identity + roles | 1–2 days |
-| 14 | Per-annotator annotation rows | 1–2 days |
-| 16 | Batch assignment | 2–3 days |
-| 17 | Analytics dashboard | 3–5 days |
+| # | Feature | Effort | Status |
+|---|---|---|---|
+| 13 | UUID-based user identity + roles | 1–2 days | Pending |
+| 14 | Per-annotator annotation rows | 1–2 days | Pending |
+| 16 | Batch assignment | 2–3 days | Pending |
+| 17 | Analytics dashboard | 3–5 days | Pending |
 
 **Total Phase 4: ~1–2 weeks**
 
