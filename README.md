@@ -46,41 +46,38 @@ Copy `.env.example` to `backend/.env` and adjust as needed:
 
 ---
 
-## Quick Start — Local Media with Docker
+## Quick Start — Hosting with Docker
 
-The easiest way to run HuddleTag against your own media is to mount a local folder into the backend container.
+`docker-compose.yml` mounts the `./jobs` folder next to itself directly into the container. No compose edits needed — just drop job folders there.
 
-**1. Place your job folder on the host:**
+**1. Clone / copy the repo and place your job folders inside `./jobs`:**
 
 ```
-/path/to/your-job/
-├── annot_spec.yml
-├── dataset.csv
-└── media/
-    ├── clip_a.mp4
-    └── clip_b.mp4
+huddletag/
+├── docker-compose.yml
+└── jobs/
+    ├── my-first-job/
+    │   ├── annot_spec.yml
+    │   ├── dataset.csv
+    │   └── media/
+    │       ├── clip_a.mp4
+    │       └── clip_b.mp4
+    └── another-job/
+        ├── annot_spec.yml
+        ├── dataset.csv
+        └── media/
+            └── image.jpg
 ```
 
-**2. Mount it in `docker-compose.yml`:**
-
-Uncomment and edit the volume entry in the `backend` service:
-
-```yaml
-services:
-  backend:
-    volumes:
-      - /path/to/your-job:/jobs/your-job   # host path : container path
-```
-
-**3. Bring the stack up:**
+**2. Bring the stack up:**
 
 ```bash
 docker compose up --build
 ```
 
-The job will appear in the job selector at `http://localhost:3000` immediately.
+The UI is available at `http://localhost:3000`. All jobs inside `./jobs` appear in the job selector immediately.
 
-> **Tip:** To add more jobs without rebuilding, add additional `- /path/to/another-job:/jobs/another-job` volume entries and run `docker compose up -d --no-build` to apply the config change (a hot-reload feature that removes the need for restarts is planned for v2).
+> **Adding more jobs later:** drop the new folder into `./jobs` and restart the backend (`docker compose restart backend`). Hot-reload (no restart needed) is a planned v2 feature.
 
 ---
 
