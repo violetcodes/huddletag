@@ -4,6 +4,7 @@ pydantic-settings
 pyyaml
 aiofiles
 boto3
+python-multipart
 
 # test dependencies
 pytest>=8.0
