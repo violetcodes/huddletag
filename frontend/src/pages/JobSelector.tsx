@@ -106,7 +106,7 @@ export default function JobSelector() {
             >
               JOBS_DIR
             </code>{' '}
-            and restart the backend.
+            and the job list will refresh automatically.
           </div>
         )}
 
@@ -336,8 +336,8 @@ export default function JobSelector() {
               }}
             >
               <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 14, marginBottom: 12, lineHeight: 1.6 }}>
-                Copy your job folder to the server's mounted jobs directory, then restart the
-                backend (or refresh once hot-reload is available):
+                Copy your job folder to the server's mounted jobs directory. The backend
+                auto-detects new jobs every few seconds — no restart required:
               </p>
 
               <ScpSnippet host={host} />
