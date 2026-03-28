@@ -1,22 +1,12 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.venv/
-*.egg-info/
-dist/
-build/
-
-# Environment
+# Source code — not part of this deployment branch
+backend/
+frontend/
+scripts/
+docs/
+data/
+db/
 .env
-
-# Database
-db/*.db
-
-# Node / frontend
-node_modules/
-frontend/dist/
-frontend/.vite/
+.env.example
 
 # OS
 .DS_Store
