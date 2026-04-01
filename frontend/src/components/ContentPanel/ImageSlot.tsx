@@ -71,23 +71,9 @@ export default function ImageSlot({ src, label }: ImageSlotProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <div style={labelStyle}>{label}</div>
         {isZoomed && (
-          <button
-            onClick={reset}
-            title="Reset zoom"
-            style={{
-              marginLeft: 'auto',
-              padding: '2px 10px',
-              borderRadius: 6,
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-surface)',
-              color: 'var(--color-text-muted)',
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Reset
-          </button>
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--color-text-faint)' }}>
+            {Math.round(transform.scale * 100)}%
+          </span>
         )}
       </div>
       <div
@@ -97,17 +83,16 @@ export default function ImageSlot({ src, label }: ImageSlotProps) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
+        onDoubleClick={reset}
         style={{
           flex: 1,
           backgroundColor: 'var(--color-sidebar-bg)',
           borderRadius: 8,
           overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           minHeight: 0,
           cursor: isZoomed ? 'grab' : 'zoom-in',
           userSelect: 'none',
+          position: 'relative',
         }}
       >
         <img
@@ -115,8 +100,10 @@ export default function ImageSlot({ src, label }: ImageSlotProps) {
           alt={label}
           draggable={false}
           style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
             objectFit: 'contain',
             transform: `scale(${transform.scale}) translate(${transform.dx / transform.scale}px, ${transform.dy / transform.scale}px)`,
             transformOrigin: 'center center',
@@ -125,11 +112,9 @@ export default function ImageSlot({ src, label }: ImageSlotProps) {
           }}
         />
       </div>
-      {isZoomed && (
-        <div style={{ fontSize: 11, color: 'var(--color-text-faint)', textAlign: 'center', marginTop: 4 }}>
-          {Math.round(transform.scale * 100)}% — scroll to zoom · drag to pan
-        </div>
-      )}
+      <div style={{ fontSize: 11, color: 'var(--color-text-faint)', textAlign: 'center', marginTop: 4 }}>
+        {isZoomed ? 'scroll to zoom · drag to pan · double-click to reset' : 'scroll to zoom · double-click to reset'}
+      </div>
     </div>
   );
 }

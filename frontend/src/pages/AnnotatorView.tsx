@@ -28,6 +28,7 @@ export default function AnnotatorView() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showComplete, setShowComplete] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Redirect to first unannotated item when no itemId is present
   useEffect(() => {
@@ -224,56 +225,163 @@ export default function AnnotatorView() {
 
       {/* ── Body ───────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        {/* Sidebar */}
+
+        {/* ── Left Sidebar (collapsible) ──────────────────────── */}
         <aside
           style={{
-            width: 258,
+            width: sidebarCollapsed ? 44 : 258,
             flexShrink: 0,
             backgroundColor: 'var(--color-sidebar-bg)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
             borderRight: '1px solid rgba(255,255,255,0.06)',
+            transition: 'width 0.2s ease',
           }}
         >
-          <div
-            style={{
-              padding: '10px 16px 6px',
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'var(--color-sidebar-dim)',
-              flexShrink: 0,
-            }}
-          >
-            Items{items ? ` (${items.length})` : ''}
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            {items && (
-              <ItemList jobId={jobId!} items={items} currentItemId={itemId} />
-            )}
-            {itemsLoading && (
-              <div style={{ padding: '20px 16px', color: 'var(--color-sidebar-dim)', fontSize: 13 }}>
-                Loading…
+          {sidebarCollapsed ? (
+            /* ── Collapsed tile ── */
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                paddingTop: 8,
+                gap: 6,
+              }}
+            >
+              {/* Expand button */}
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                title="Expand sidebar"
+                style={{
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 7,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  flexShrink: 0,
+                }}
+              >
+                ›
+              </button>
+              {/* Annotated / total badge */}
+              {items && (
+                <div
+                  title={`${annotatedCount} of ${itemCount} annotated`}
+                  style={{
+                    marginTop: 4,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--color-sidebar-dim)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <span style={{ color: 'var(--color-accent)', fontSize: 13, fontWeight: 800 }}>
+                    {annotatedCount}
+                  </span>
+                  <span style={{ fontSize: 9, letterSpacing: '0.05em' }}>/ {itemCount}</span>
+                </div>
+              )}
+              {/* Vertical label */}
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-sidebar-dim)',
+                  writingMode: 'vertical-rl',
+                  transform: 'rotate(180deg)',
+                  userSelect: 'none',
+                }}
+              >
+                Items
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* ── Expanded sidebar ── */
+            <>
+              <div
+                style={{
+                  padding: '10px 16px 6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-sidebar-dim)',
+                    flex: 1,
+                  }}
+                >
+                  Items{items ? ` (${items.length})` : ''}
+                </span>
+                {/* Collapse button */}
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  title="Collapse sidebar"
+                  style={{
+                    width: 22,
+                    height: 22,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 5,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-sidebar-dim)',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    flexShrink: 0,
+                  }}
+                >
+                  ‹
+                </button>
+              </div>
 
-          <StatsPanel
-            jobId={jobId!}
-            itemCount={itemCount}
-            annotatedCount={annotatedCount}
-            onSave={currentItem ? () => handleSave(false) : undefined}
-            isSaving={saveMutation.isPending}
-            timeSpent={timeSpent}
-            avgPerItem={avgPerItem}
-            eta={eta}
-          />
+              <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                {items && (
+                  <ItemList jobId={jobId!} items={items} currentItemId={itemId} />
+                )}
+                {itemsLoading && (
+                  <div style={{ padding: '20px 16px', color: 'var(--color-sidebar-dim)', fontSize: 13 }}>
+                    Loading…
+                  </div>
+                )}
+              </div>
+
+              <StatsPanel
+                jobId={jobId!}
+                itemCount={itemCount}
+                annotatedCount={annotatedCount}
+                onSave={currentItem ? () => handleSave(false) : undefined}
+                isSaving={saveMutation.isPending}
+                timeSpent={timeSpent}
+                avgPerItem={avgPerItem}
+                eta={eta}
+              />
+            </>
+          )}
         </aside>
 
-        {/* Main workspace */}
+        {/* ── Center: letterboxed content ─────────────────────── */}
         <div
           style={{
             flex: 1,
@@ -385,11 +493,11 @@ export default function AnnotatorView() {
                 </div>
               )}
 
-              {/* Content grid */}
+              {/* Letterboxed content — fills all remaining height, no scroll */}
               <div
                 style={{
                   flex: 1,
-                  overflowY: 'auto',
+                  overflow: 'hidden',
                   padding: 16,
                   minHeight: 0,
                 }}
@@ -401,54 +509,85 @@ export default function AnnotatorView() {
                   contentSchema={spec.content_schema}
                 />
               </div>
-
-              {/* Feedback panel */}
-              <div
-                style={{
-                  flexShrink: 0,
-                  backgroundColor: 'var(--color-surface)',
-                  borderTop: '1px solid var(--color-border)',
-                  padding: '16px 20px',
-                  overflowY: 'auto',
-                  maxHeight: '42%',
-                }}
-              >
-                <FeedbackForm
-                  fields={spec.feedbacks}
-                  values={formValues}
-                  onChange={setFormValues}
-                />
-
-                {saveError && (
-                  <p
-                    style={{
-                      marginTop: 10,
-                      fontSize: 13,
-                      color: 'var(--color-danger)',
-                    }}
-                  >
-                    {saveError}
-                  </p>
-                )}
-
-                <div
-                  style={{
-                    marginTop: 16,
-                    paddingTop: 14,
-                    borderTop: '1px solid var(--color-bg-subtle)',
-                  }}
-                >
-                  <ActionBar
-                    onSave={() => handleSave(false)}
-                    onSaveAndNext={() => handleSave(true)}
-                    isSaving={saveMutation.isPending}
-                    hasNextUnannotated={!!nextUnannotated}
-                  />
-                </div>
-              </div>
             </>
           )}
         </div>
+
+        {/* ── Right Sidebar: annotation collection ───────────── */}
+        {!isLoading && !isError && currentItem && spec && (
+          <aside
+            style={{
+              width: 300,
+              flexShrink: 0,
+              backgroundColor: 'var(--color-surface)',
+              borderLeft: '1px solid var(--color-border)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Panel header */}
+            <div
+              style={{
+                padding: '10px 16px 8px',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-muted)',
+                flexShrink: 0,
+                borderBottom: '1px solid var(--color-border)',
+              }}
+            >
+              Annotation
+            </div>
+
+            {/* Scrollable fields */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '16px',
+                minHeight: 0,
+              }}
+            >
+              <FeedbackForm
+                fields={spec.feedbacks}
+                values={formValues}
+                onChange={setFormValues}
+              />
+
+              {saveError && (
+                <p
+                  style={{
+                    marginTop: 10,
+                    fontSize: 13,
+                    color: 'var(--color-danger)',
+                  }}
+                >
+                  {saveError}
+                </p>
+              )}
+            </div>
+
+            {/* Sticky action bar at bottom */}
+            <div
+              style={{
+                flexShrink: 0,
+                padding: '14px 16px',
+                borderTop: '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-surface)',
+              }}
+            >
+              <ActionBar
+                onSave={() => handleSave(false)}
+                onSaveAndNext={() => handleSave(true)}
+                isSaving={saveMutation.isPending}
+                hasNextUnannotated={!!nextUnannotated}
+              />
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

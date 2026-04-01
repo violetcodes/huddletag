@@ -16,10 +16,8 @@ const frameStyle: CSSProperties = {
   backgroundColor: 'var(--color-sidebar-bg)',
   borderRadius: 8,
   overflow: 'hidden',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
   minHeight: 0,
+  position: 'relative',
 };
 
 interface VideoSlotProps {
@@ -59,7 +57,13 @@ export default function VideoSlot({ src, label }: VideoSlotProps) {
           src={src}
           controls
           preload="metadata"
-          style={{ maxWidth: '100%', maxHeight: '100%' }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
         />
       </div>
     </div>
